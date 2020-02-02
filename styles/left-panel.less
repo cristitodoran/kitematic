@@ -45,6 +45,37 @@
         }
       }
     }
+
+    .search-container {
+      margin: 0.8rem 0 0 0;
+
+      .form-control {
+        box-shadow: none;
+        -webkit-box-shadow: none;
+        border-radius: 0;
+        border: 1px solid #e6edf4;
+        border-left: 0;
+        border-right: 0;
+        padding: 6px 12px 6px 4.4rem;
+        height: 44px;
+      }
+
+      input:focus {
+        box-shadow: inset 0 0 0 1px #22b8eb;
+      }
+
+      .search-icon {
+        font-size: 20px;
+        color: @gray-lighter;
+        position: absolute;
+        top: 64px;
+        left: 13px;
+      }
+
+      .icon-search:before {
+        content: "h";
+      }
+    }
   }
   .sidebar-containers {
     position: relative;
@@ -148,10 +179,8 @@
         }
         .info {
           margin-left: 1rem;
-          max-width: 120px;
           .name {
             text-overflow: ellipsis;
-            max-width: @sidebar-text-overflow-width;
             white-space: nowrap;
             overflow: hidden;
             font-size: 13px;
@@ -164,7 +193,6 @@
             font-size: 11px;
             font-weight: 400;
             text-overflow: ellipsis;
-            max-width: @sidebar-text-overflow-width;
             white-space: nowrap;
             overflow: hidden;
           }

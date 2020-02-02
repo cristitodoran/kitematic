@@ -18,11 +18,13 @@ var Containers = React.createClass({
     return {
       sidebarOffset: 0,
       containers: containerStore.getState().containers,
-      sorted: this.sorted(containerStore.getState().containers)
+      sorted: this.sorted(containerStore.getState().containers),
+      search: ''
     };
   },
 
   componentDidMount: function () {
+    this.refs.searchContainer.getDOMNode().focus();
     containerStore.listen(this.update);
   },
 
@@ -115,6 +117,32 @@ var Containers = React.createClass({
     shell.openExternal('https://github.com/docker/kitematic');
   },
 
+  handleSearchChange: function(e) {
+    let query = e.target.value;
+    if (query === this.state.query) {
+      return;
+    }
+    this.search(query);
+  },
+
+  escapeRegExp: function (str) {
+    return str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+  },
+
+  search: function(query) {
+    const containers = containerStore.getState().containers;
+    const regex = new RegExp(this.escapeRegExp(query), 'i');
+
+    const filtered = _.values(containers)
+      .filter(container => regex.test(container.Name));
+    const sorted = this.sorted(filtered);
+
+    this.setState({
+      sorted,
+      query
+    });
+  },
+
   render: function () {
     var sidebarHeaderClass = 'sidebar-header';
     if (this.state.sidebarOffset) {
@@ -133,6 +161,12 @@ var Containers = React.createClass({
                 <Router.Link to="search">
                   <span className="btn btn-new btn-action has-icon btn-hollow"><span className="icon icon-add"></span>New</span>
                 </Router.Link>
+              </div>
+            </section>
+            <section className={sidebarHeaderClass}>
+              <div className="create search-container">
+                <input type="search" ref="searchContainer" onChange={this.handleSearchChange} className="form-control" placeholder="Search Containers" />
+                <div className="icon icon-search search-icon"></div>
               </div>
             </section>
             <section className="sidebar-containers" onScroll={this.handleScroll}>

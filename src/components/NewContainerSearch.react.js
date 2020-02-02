@@ -35,7 +35,6 @@ module.exports = React.createClass({
     };
   },
   componentDidMount: function () {
-    this.refs.searchInput.getDOMNode().focus();
     repositoryStore.listen(this.update);
     accountStore.listen(this.updateAccount);
     imageStore.listen(this.updateImage);
