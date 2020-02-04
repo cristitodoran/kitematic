@@ -6,8 +6,11 @@ import containerStore from '../stores/ContainerStore';
 import ContainerList from './ContainerList.react';
 import Header from './Header.react';
 import metrics from '../utils/MetricsUtil';
-import {shell} from 'electron';
+import electron, {shell} from 'electron';
 import machine from '../utils/DockerMachineUtil';
+import containerActions from '../actions/ContainerActions';
+
+const dialog = electron.remote.dialog;
 
 var Containers = React.createClass({
   contextTypes: {
@@ -66,13 +69,12 @@ var Containers = React.createClass({
       this.context.router.transitionTo('pull');
     } else if (name && !containers[name]) {
       if (sorted.length) {
-        this.context.router.transitionTo('containerHome', {name: sorted[0].Name});
+        this.context.router.transitionTo('containerHome', { name: sorted[0].Name });
       } else {
         this.context.router.transitionTo('search');
       }
     }
 
-    console.log(sorted);
     this.setState({
       containers: containers,
       sorted: sorted,
@@ -119,7 +121,31 @@ var Containers = React.createClass({
     shell.openExternal('https://github.com/docker/kitematic');
   },
 
-  handleSearchChange: function(e) {
+  handleClickDeleteFiltered: function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const sorted = this.state.sorted;
+    if (!sorted || sorted.length === 0) {
+      return;
+    }
+
+    dialog.showMessageBox({
+      message: 'Are you sure you want to stop & remove all filtered containers?',
+      buttons: ['Remove', 'Cancel']
+    }, function (index) {
+      if (index === 0) {
+        metrics.track('Deleted Container', {
+          from: 'list',
+          type: 'existing'
+        });
+
+        sorted.forEach(container => containerActions.destroy(container.Name));
+      }
+    }.bind(this));
+  },
+
+  handleSearchChange: function (e) {
     let query = e.target.value;
     if (query === this.state.query) {
       return;
@@ -136,7 +162,7 @@ var Containers = React.createClass({
     return str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
   },
 
-  filtered: function(query, containers) {
+  filtered: function (query, containers) {
     const regex = new RegExp(this.escapeRegExp(query || ''), 'i');
 
     return this.sorted(containers)
@@ -152,12 +178,17 @@ var Containers = React.createClass({
     var container = this.context.router.getCurrentParams().name ? this.state.containers[this.context.router.getCurrentParams().name] : {};
     return (
       <div className="containers">
-        <Header />
+        <Header/>
         <div className="containers-body">
           <div className="sidebar">
             <section className={sidebarHeaderClass}>
               <h4>Containers</h4>
               <div className="create">
+                <span className="btn btn-new btn-action has-icon btn-hollow btn-delete"
+                      onClick={this.handleClickDeleteFiltered}>
+                  <span className="icon icon-delete"></span>
+                  Delete filtered
+                </span>
                 <Router.Link to="search">
                   <span className="btn btn-new btn-action has-icon btn-hollow"><span className="icon icon-add"></span>New</span>
                 </Router.Link>
@@ -165,17 +196,21 @@ var Containers = React.createClass({
             </section>
             <section className={sidebarHeaderClass}>
               <div className="create search-container">
-                <input type="search" ref="searchContainer" onChange={this.handleSearchChange} className="form-control" placeholder="Search Containers" />
+                <input type="search" ref="searchContainer" onChange={this.handleSearchChange} className="form-control"
+                       placeholder="Search Containers"/>
                 <div className="icon icon-search search-icon"></div>
               </div>
             </section>
             <section className="sidebar-containers" onScroll={this.handleScroll}>
-              <ContainerList containers={this.state.sorted} newContainer={this.state.newContainer} />
+              <ContainerList containers={this.state.sorted} newContainer={this.state.newContainer}/>
             </section>
             <section className="sidebar-buttons">
-              <span className="btn-sidebar btn-terminal" onClick={this.handleClickDockerTerminal} ><span className="icon icon-docker-cli"></span><span className="text">DOCKER CLI</span></span>
-              <span className="btn-sidebar btn-feedback" onClick={this.handleClickReportIssue} ><span className="icon icon-feedback"></span></span>
-              <span className="btn-sidebar btn-preferences" onClick={this.handleClickPreferences} ><span className="icon icon-preferences"></span></span>
+              <span className="btn-sidebar btn-terminal" onClick={this.handleClickDockerTerminal}><span
+                className="icon icon-docker-cli"></span><span className="text">DOCKER CLI</span></span>
+              <span className="btn-sidebar btn-feedback" onClick={this.handleClickReportIssue}><span
+                className="icon icon-feedback"></span></span>
+              <span className="btn-sidebar btn-preferences" onClick={this.handleClickPreferences}><span
+                className="icon icon-preferences"></span></span>
             </section>
           </div>
           <Router.RouteHandler pending={this.state.pending} containers={this.state.containers} container={container}/>
