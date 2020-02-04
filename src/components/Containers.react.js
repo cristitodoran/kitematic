@@ -58,7 +58,8 @@ var Containers = React.createClass({
 
   update: function () {
     let containers = containerStore.getState().containers;
-    let sorted = this.sorted(containerStore.getState().containers);
+    const query = this.state.query || '';
+    let sorted = this.filtered(query, containers);
 
     let name = this.context.router.getCurrentParams().name;
     if (containerStore.getState().pending) {
@@ -71,6 +72,7 @@ var Containers = React.createClass({
       }
     }
 
+    console.log(sorted);
     this.setState({
       containers: containers,
       sorted: sorted,
@@ -122,25 +124,23 @@ var Containers = React.createClass({
     if (query === this.state.query) {
       return;
     }
-    this.search(query);
+
+    const containers = containerStore.getState().containers;
+    this.setState({
+      sorted: this.filtered(query, containers),
+      query
+    });
   },
 
   escapeRegExp: function (str) {
     return str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
   },
 
-  search: function(query) {
-    const containers = containerStore.getState().containers;
-    const regex = new RegExp(this.escapeRegExp(query), 'i');
+  filtered: function(query, containers) {
+    const regex = new RegExp(this.escapeRegExp(query || ''), 'i');
 
-    const filtered = _.values(containers)
+    return this.sorted(containers)
       .filter(container => regex.test(container.Name));
-    const sorted = this.sorted(filtered);
-
-    this.setState({
-      sorted,
-      query
-    });
   },
 
   render: function () {
